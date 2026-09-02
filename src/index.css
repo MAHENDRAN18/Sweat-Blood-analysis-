@@ -1,0 +1,137 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-heading: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+    --font-sans: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+    --font-mono: 'Space Mono', 'IBM Plex Mono', monospace;
+
+    --color-paper: #FAF6EE;
+    --color-grid: #C9D6DE;
+    --color-ink-blue: #2B4570;
+    --color-ink-red: #B33A3A;
+    --color-ink-sage: #6B8F71;
+    --color-ink-amber: #C98A2B;
+    --color-ink-dark: #1E293B;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    color-scheme: light;
+    background-color: #FAF6EE;
+    color: #1E293B;
+    letter-spacing: -0.01em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-image: 
+      linear-gradient(to right, rgba(201, 214, 222, 0.45) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(201, 214, 222, 0.45) 1px, transparent 1px);
+    background-size: 20px 20px;
+    background-attachment: fixed;
+  }
+
+  h1, h2, h3, h4, h5, h6, .font-heading {
+    font-family: var(--font-heading);
+    letter-spacing: -0.02em;
+    font-weight: 700;
+  }
+
+  .font-mono-chart {
+    font-family: var(--font-mono);
+    font-feature-settings: "tnum" 1, "zero" 1;
+  }
+}
+
+/* Authentic Hospital Bedside Chart Components */
+.chart-paper {
+  background-color: #FFFCF7;
+  border: 1px solid #D1DCE5;
+  box-shadow: 0 2px 4px 0 rgba(43, 69, 112, 0.04), 0 1px 2px 0 rgba(43, 69, 112, 0.02);
+}
+
+.chart-grid-overlay {
+  background-image: 
+    linear-gradient(to right, rgba(201, 214, 222, 0.5) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(201, 214, 222, 0.5) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+.chart-clipboard-clip {
+  position: relative;
+}
+.chart-clipboard-clip::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 110px;
+  height: 18px;
+  background: #3A4D6B;
+  border-radius: 4px 4px 0 0;
+  box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.25), 0 2px 4px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+}
+
+/* Ink color text and border helpers */
+.ink-blue { color: #2B4570; }
+.ink-red { color: #B33A3A; }
+.ink-sage { color: #6B8F71; }
+.ink-amber { color: #C98A2B; }
+
+.bg-ink-blue { background-color: #2B4570; }
+.bg-ink-red { background-color: #B33A3A; }
+.bg-ink-sage { background-color: #6B8F71; }
+.bg-ink-amber { background-color: #C98A2B; }
+
+.border-ink-blue { border-color: #2B4570; }
+.border-ink-red { border-color: #B33A3A; }
+.border-ink-sage { border-color: #6B8F71; }
+.border-ink-amber { border-color: #C98A2B; }
+
+/* Ruled table lines */
+.chart-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+.chart-table th, .chart-table td {
+  border: 1px solid #D8E2E8;
+  padding: 6px 10px;
+}
+.chart-table th {
+  background-color: #F0F5F8;
+  color: #2B4570;
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Pen Plotted Trend Line Glow */
+.pen-plotted-blue {
+  stroke: #2B4570;
+  stroke-width: 2.2;
+  filter: drop-shadow(0 1px 1px rgba(43, 69, 112, 0.2));
+}
+
+.pen-plotted-red {
+  stroke: #B33A3A;
+  stroke-width: 2.2;
+  filter: drop-shadow(0 1px 1px rgba(179, 58, 58, 0.2));
+}
+
+/* Custom Scrollbar for chart tables */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #E8EFF4;
+}
+::-webkit-scrollbar-thumb {
+  background: #B6C8D5;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #8FAABA;
+}

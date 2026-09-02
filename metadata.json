@@ -1,0 +1,6 @@
+{
+  "name": "Ward Chart — Early Disease Risk Detection from Blood and Sweat Biomarkers, Hospital-Style Patient Monitoring",
+  "description": "Hospital bedside observation chart interface for early disease risk detection fusing blood biochemistry and wearable sweat biomarkers with Ward Board and Doctor Notes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
