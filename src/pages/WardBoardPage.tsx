@@ -16,7 +16,11 @@ import {
   Clock,
   UserPlus,
   RefreshCw,
-  X
+  X,
+  HeartPulse,
+  Pill,
+  Award,
+  AlertCircle
 } from 'lucide-react';
 import { PatientChartProfile } from '../types';
 
@@ -35,7 +39,7 @@ export const WardBoardPage: React.FC<WardBoardPageProps> = ({ onNavigate }) => {
   } = useWardChart();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterTier, setFilterTier] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'inpatient' | 'discharged' | 'recovered' | 'symptoms'>('all');
   const [showAdmitModal, setShowAdmitModal] = useState(false);
 
   // New patient form state
@@ -56,18 +60,23 @@ export const WardBoardPage: React.FC<WardBoardPageProps> = ({ onNavigate }) => {
       p.mrn.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.primaryDiagnosis.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesTier =
-      filterTier === 'all' ||
-      (filterTier === 'high' && p.riskTier === 'High Risk') ||
-      (filterTier === 'moderate' && p.riskTier === 'Moderate Risk') ||
-      (filterTier === 'low' && p.riskTier === 'Low Risk');
+    const hasUnreviewedSymptoms = (p.symptomUpdates || []).some((u) => !u.doctorReviewed);
 
-    return matchesSearch && matchesTier;
+    if (!matchesSearch) return false;
+
+    if (filterStatus === 'inpatient') return p.patientStatus === 'inpatient' || !p.patientStatus;
+    if (filterStatus === 'discharged') return p.patientStatus === 'discharged' || p.patientStatus === 'recovering';
+    if (filterStatus === 'recovered') return p.patientStatus === 'fully_recovered';
+    if (filterStatus === 'symptoms') return hasUnreviewedSymptoms;
+
+    return true;
   });
 
-  const highRiskCount = patients.filter((p) => p.riskTier === 'High Risk').length;
-  const moderateRiskCount = patients.filter((p) => p.riskTier === 'Moderate Risk').length;
-  const lowRiskCount = patients.filter((p) => p.riskTier === 'Low Risk').length;
+  const totalPatients = patients.length;
+  const inpatientCount = patients.filter((p) => p.patientStatus === 'inpatient' || !p.patientStatus).length;
+  const dischargedCount = patients.filter((p) => p.patientStatus === 'discharged' || p.patientStatus === 'recovering').length;
+  const recoveredCount = patients.filter((p) => p.patientStatus === 'fully_recovered').length;
+  const pendingSymptomsCount = patients.filter((p) => (p.symptomUpdates || []).some((u) => !u.doctorReviewed)).length;
 
   const handleOpenPatientChart = (patientId: string) => {
     setSelectedPatientId(patientId);
@@ -103,42 +112,52 @@ export const WardBoardPage: React.FC<WardBoardPageProps> = ({ onNavigate }) => {
   return (
     <div className="space-y-6">
       {/* 1. CLINICAL WARD BOARD BANNER */}
-      <div className="bg-[#FFFFFF] border-2 border-[#2B4570] rounded-lg p-5 shadow-xs chart-paper relative overflow-hidden">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#D1DCE5] pb-4">
+      <div className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 shadow-sm relative overflow-hidden">
+        {/* Medical Green Accent Bar */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-600 via-teal-500 to-red-500" />
+
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono-chart uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-[#2B4570] text-[#FAF6EE]">
-                HOSPITAL INPATIENT ROSTER
+              <span className="text-[11px] font-mono-chart uppercase font-bold tracking-wider px-2.5 py-0.5 rounded bg-emerald-800 text-white flex items-center gap-1 shadow-2xs">
+                <HeartPulse className="w-3.5 h-3.5 text-emerald-300" />
+                HOSPITAL INPATIENT &amp; RECOVERY ROSTER
               </span>
-              <span className="text-xs font-mono-chart text-[#556987]">
-                Shift: Day (08:00 - 20:00)
+              <span className="text-xs font-mono-chart text-slate-500">
+                Shift: Active &bull; Attending: <strong className="text-emerald-950">{doctorName}</strong>
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-[#2B4570] font-heading mt-1">
-              Ward Board &mdash; Bedside Patient Grid
+            <h1 className="text-2xl sm:text-3xl font-bold text-emerald-950 font-heading mt-1.5">
+              Doctor&apos;s Clinical Ward &amp; Outpatient Board
             </h1>
-            <p className="text-xs text-[#556987] font-mono-chart mt-0.5">
-              Attending: <strong className="text-[#2B4570]">{doctorName}</strong> &bull; Total Occupancy: <strong>{patients.length} / 12 Beds</strong>
+            <p className="text-xs text-slate-600 font-sans mt-0.5">
+              Manage inpatient admissions, review online patient symptom updates, adjust medications/precautions, and monitor recovery.
             </p>
           </div>
 
-          {/* Quick Roster Tally Stats */}
+          {/* Quick Action Buttons & Counts */}
           <div className="flex items-center gap-2 font-mono-chart text-xs flex-wrap">
-            <div className="bg-[#FDEDEC] border border-[#F5B7B1] px-3 py-1.5 rounded flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#B33A3A] animate-ping" />
-              <span className="font-bold text-[#B33A3A]">{highRiskCount} RED ALERT</span>
+            <div className="bg-emerald-50 border border-emerald-300 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+              <Bed className="w-4 h-4 text-emerald-700" />
+              <span className="font-bold text-emerald-800">{inpatientCount} Inpatients</span>
             </div>
-            <div className="bg-[#FEF5E7] border border-[#FAD7A0] px-3 py-1.5 rounded flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#C98A2B]" />
-              <span className="font-bold text-[#C98A2B]">{moderateRiskCount} AMBER</span>
+            <div className="bg-teal-50 border border-teal-300 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-teal-700" />
+              <span className="font-bold text-teal-800">{dischargedCount} Discharged</span>
             </div>
-            <div className="bg-[#EAFAF1] border border-[#A9DFBF] px-3 py-1.5 rounded flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#6B8F71]" />
-              <span className="font-bold text-[#6B8F71]">{lowRiskCount} SAGE</span>
+            <div className="bg-emerald-100 border border-emerald-300 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+              <Award className="w-4 h-4 text-emerald-800" />
+              <span className="font-bold text-emerald-900">{recoveredCount} Recovered</span>
             </div>
+            {pendingSymptomsCount > 0 && (
+              <div className="bg-amber-100 border border-amber-300 px-3 py-1.5 rounded-lg flex items-center gap-1.5 animate-pulse">
+                <AlertCircle className="w-4 h-4 text-amber-800" />
+                <span className="font-bold text-amber-900">{pendingSymptomsCount} Symptom Alert{pendingSymptomsCount > 1 ? 's' : ''}</span>
+              </div>
+            )}
             <button
               onClick={() => setShowAdmitModal(true)}
-              className="bg-[#2B4570] hover:bg-[#1D3254] text-[#FAF6EE] font-bold px-3 py-1.5 rounded text-xs transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+              className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-3.5 py-1.5 rounded-lg text-xs transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs font-sans"
             >
               <UserPlus className="w-3.5 h-3.5" />
               <span>Admit Patient</span>
@@ -149,38 +168,75 @@ export const WardBoardPage: React.FC<WardBoardPageProps> = ({ onNavigate }) => {
         {/* 2. SEARCH & FILTER TOOLBAR */}
         <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="relative w-full sm:w-80">
-            <Search className="w-4 h-4 text-[#556987] absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Search by Bed #, Name, MRN, or Diagnosis..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 bg-[#FAF6EE] border border-[#C9D6DE] rounded text-xs font-mono-chart text-[#1E293B] placeholder-[#94A3B8] focus:outline-none focus:border-[#2B4570]"
+              className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-sans text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
             />
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-            <Filter className="w-3.5 h-3.5 text-[#556987]" />
-            <span className="text-xs font-mono-chart text-[#556987]">Filter Risk:</span>
-            <div className="flex items-center bg-[#FAF6EE] border border-[#C9D6DE] rounded p-0.5 text-xs font-mono-chart">
-              {(['all', 'high', 'moderate', 'low'] as const).map((tier) => (
-                <button
-                  key={tier}
-                  onClick={() => setFilterTier(tier)}
-                  className={`px-2.5 py-0.5 rounded capitalize transition-all cursor-pointer font-bold ${
-                    filterTier === tier
-                      ? 'bg-[#2B4570] text-[#FAF6EE]'
-                      : 'text-[#556987] hover:text-[#2B4570]'
-                  }`}
-                >
-                  {tier}
-                </button>
-              ))}
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
+            <Filter className="w-3.5 h-3.5 text-slate-500" />
+            <span className="text-xs font-mono-chart text-slate-600">Filter View:</span>
+            <div className="flex items-center bg-slate-100 border border-slate-200 rounded-lg p-0.5 text-xs font-sans">
+              <button
+                onClick={() => setFilterStatus('all')}
+                className={`px-3 py-1 rounded-md transition-all cursor-pointer font-bold ${
+                  filterStatus === 'all'
+                    ? 'bg-emerald-700 text-white shadow-2xs'
+                    : 'text-slate-600 hover:text-emerald-900'
+                }`}
+              >
+                All ({totalPatients})
+              </button>
+              <button
+                onClick={() => setFilterStatus('inpatient')}
+                className={`px-3 py-1 rounded-md transition-all cursor-pointer font-bold ${
+                  filterStatus === 'inpatient'
+                    ? 'bg-emerald-700 text-white shadow-2xs'
+                    : 'text-slate-600 hover:text-emerald-900'
+                }`}
+              >
+                Inpatients ({inpatientCount})
+              </button>
+              <button
+                onClick={() => setFilterStatus('discharged')}
+                className={`px-3 py-1 rounded-md transition-all cursor-pointer font-bold ${
+                  filterStatus === 'discharged'
+                    ? 'bg-emerald-700 text-white shadow-2xs'
+                    : 'text-slate-600 hover:text-emerald-900'
+                }`}
+              >
+                Discharged ({dischargedCount})
+              </button>
+              <button
+                onClick={() => setFilterStatus('recovered')}
+                className={`px-3 py-1 rounded-md transition-all cursor-pointer font-bold ${
+                  filterStatus === 'recovered'
+                    ? 'bg-emerald-700 text-white shadow-2xs'
+                    : 'text-slate-600 hover:text-emerald-900'
+                }`}
+              >
+                Recovered ({recoveredCount})
+              </button>
+              <button
+                onClick={() => setFilterStatus('symptoms')}
+                className={`px-3 py-1 rounded-md transition-all cursor-pointer font-bold ${
+                  filterStatus === 'symptoms'
+                    ? 'bg-amber-600 text-white shadow-2xs'
+                    : 'text-amber-800 hover:text-amber-950'
+                }`}
+              >
+                Symptom Alerts ({pendingSymptomsCount})
+              </button>
             </div>
             <button
               onClick={resetToSampleData}
               title="Reset to original 10 Hospital Patients"
-              className="p-1.5 rounded border border-[#C9D6DE] bg-[#FAF6EE] text-[#556987] hover:text-[#2B4570] hover:bg-[#E2EAF0] cursor-pointer"
+              className="p-2 rounded-lg border border-slate-300 bg-white text-slate-600 hover:text-emerald-800 hover:bg-emerald-50 cursor-pointer shadow-2xs transition-colors"
             >
               <RefreshCw className="w-3.5 h-3.5" />
             </button>
@@ -188,12 +244,14 @@ export const WardBoardPage: React.FC<WardBoardPageProps> = ({ onNavigate }) => {
         </div>
       </div>
 
-      {/* 3. WARD BOARD GRID OF INPATIENT BEDSIDE CHARTS */}
+      {/* 3. WARD BOARD GRID OF INPATIENT & OUTPATIENT CHARTS */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
         {filteredPatients.map((patient) => {
           const isHigh = patient.riskTier === 'High Risk';
           const isModerate = patient.riskTier === 'Moderate Risk';
           const isSelected = selectedPatientId === patient.id;
+          const isDischarged = patient.patientStatus === 'discharged' || patient.patientStatus === 'recovering';
+          const isRecovered = patient.patientStatus === 'fully_recovered';
 
           const systolic = patient.healthData.systolic_bp;
           const diastolic = patient.healthData.diastolic_bp;
@@ -207,88 +265,131 @@ export const WardBoardPage: React.FC<WardBoardPageProps> = ({ onNavigate }) => {
 
           const sweatCortisol = patient.healthData.sweat_cortisol || 1.2;
 
+          const unreviewedSymptoms = (patient.symptomUpdates || []).filter((u) => !u.doctorReviewed);
+          const activeTabletsCount = (patient.tablets || []).filter(
+            (t) => t.status === 'active' || t.status === 'modified'
+          ).length;
+
+          const recoveryPercent = patient.recoveryStatus?.percentRecovered || (isRecovered ? 100 : 50);
+
           return (
             <div
               key={patient.id}
-              className={`bg-[#FFFFFF] rounded-lg border-2 transition-all hover:shadow-md cursor-pointer flex flex-col justify-between relative chart-paper ${
-                isHigh
-                  ? 'border-[#B33A3A] hover:border-[#8E2828]'
+              className={`bg-white rounded-xl border-2 transition-all hover:shadow-md cursor-pointer flex flex-col justify-between relative overflow-hidden ${
+                isRecovered
+                  ? 'border-emerald-300 hover:border-emerald-500'
+                  : isHigh
+                  ? 'border-red-400 hover:border-red-600'
                   : isModerate
-                  ? 'border-[#C98A2B] hover:border-[#A56E1E]'
-                  : 'border-[#6B8F71] hover:border-[#527056]'
-              } ${isSelected ? 'ring-2 ring-[#2B4570]' : ''}`}
+                  ? 'border-amber-300 hover:border-amber-500'
+                  : 'border-teal-300 hover:border-teal-500'
+              } ${isSelected ? 'ring-2 ring-emerald-600' : ''}`}
               onClick={() => handleOpenPatientChart(patient.id)}
             >
-              {/* Card Header (Bed Tag, MRN, Risk Stamp) */}
+              {/* Card Header (Bed Tag, MRN, Status Stamp) */}
               <div
                 className={`p-3.5 border-b flex items-center justify-between ${
-                  isHigh
-                    ? 'bg-[#FDEDEC] border-[#F5B7B1]'
+                  isRecovered
+                    ? 'bg-emerald-50/90 border-emerald-200'
+                    : isHigh
+                    ? 'bg-red-50/80 border-red-200'
                     : isModerate
-                    ? 'bg-[#FEF5E7] border-[#FAD7A0]'
-                    : 'bg-[#EAFAF1] border-[#A9DFBF]'
+                    ? 'bg-amber-50/80 border-amber-200'
+                    : 'bg-teal-50/80 border-teal-200'
                 }`}
               >
-                <div className="flex items-center gap-2">
-                  <div className="bg-[#2B4570] text-[#FAF6EE] px-2 py-0.5 rounded font-mono-chart font-bold text-xs">
-                    {patient.bedNumber}
+                <div className="flex items-center gap-2.5">
+                  <div
+                    className={`px-2.5 py-1 rounded-md font-mono-chart font-bold text-xs text-white ${
+                      isRecovered
+                        ? 'bg-emerald-700'
+                        : isHigh
+                        ? 'bg-red-600'
+                        : isModerate
+                        ? 'bg-amber-600'
+                        : 'bg-teal-700'
+                    }`}
+                  >
+                    {isDischarged ? 'OUTPATIENT' : patient.bedNumber}
                   </div>
                   <div>
-                    <h3 className="font-bold text-[#1E293B] text-base font-heading leading-none">
+                    <h3 className="font-bold text-slate-900 text-base font-heading leading-tight">
                       {patient.name}
                     </h3>
-                    <p className="text-[10px] font-mono-chart text-[#556987] mt-0.5">
+                    <p className="text-xs font-mono-chart text-slate-500">
                       {patient.age}y &bull; {patient.sex.toUpperCase()} &bull; {patient.mrn}
                     </p>
                   </div>
                 </div>
 
-                <div
-                  className={`px-2.5 py-1 rounded text-[11px] font-bold font-mono-chart border ${
-                    isHigh
-                      ? 'bg-[#FFFFFF] text-[#B33A3A] border-[#B33A3A]'
-                      : isModerate
-                      ? 'bg-[#FFFFFF] text-[#C98A2B] border-[#C98A2B]'
-                      : 'bg-[#FFFFFF] text-[#6B8F71] border-[#6B8F71]'
-                  }`}
-                >
-                  {isHigh && 'RED ALERT'}
-                  {isModerate && 'MODERATE'}
-                  {!isHigh && !isModerate && 'STABLE'} &bull; {patient.riskScore}%
+                <div className="flex flex-col items-end gap-1">
+                  {isRecovered ? (
+                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold font-mono-chart bg-emerald-600 text-white flex items-center gap-1">
+                      <Award className="w-3 h-3" /> RECOVERED 100%
+                    </span>
+                  ) : isDischarged ? (
+                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold font-mono-chart bg-teal-700 text-white">
+                      DISCHARGED
+                    </span>
+                  ) : (
+                    <span
+                      className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold font-mono-chart ${
+                        isHigh ? 'bg-red-600 text-white' : isModerate ? 'bg-amber-500 text-white' : 'bg-emerald-600 text-white'
+                      }`}
+                    >
+                      {patient.riskTier.toUpperCase()}
+                    </span>
+                  )}
+                  <span className="text-[10px] font-mono-chart text-slate-500 font-bold">
+                    Recovery: {recoveryPercent}%
+                  </span>
                 </div>
               </div>
 
               {/* Card Body (Diagnosis & Dual-Stream Vitals Table) */}
               <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
                 <div>
-                  <div className="text-[11px] font-mono-chart text-[#556987]">
-                    <span className="font-bold uppercase">Diagnosis:</span>{' '}
-                    <span className="text-[#1E293B] font-semibold">{patient.primaryDiagnosis}</span>
+                  <div className="text-xs font-mono-chart text-slate-500">
+                    <span className="font-bold uppercase text-slate-600">Diagnosis:</span>{' '}
+                    <span className="text-slate-900 font-semibold">{patient.primaryDiagnosis}</span>
                   </div>
 
+                  {/* Symptom Report Alert Pill if unreviewed */}
+                  {unreviewedSymptoms.length > 0 && (
+                    <div className="mt-2 bg-amber-50 border border-amber-300 rounded-lg p-2 flex items-center gap-2 text-xs font-sans text-amber-950 animate-pulse">
+                      <AlertCircle className="w-4 h-4 text-amber-700 shrink-0" />
+                      <div>
+                        <strong>{unreviewedSymptoms.length} Symptom Report Awaiting Review:</strong>
+                        <p className="text-[11px] text-amber-900 truncate">
+                          &ldquo;{unreviewedSymptoms[0].patientComments}&rdquo;
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Dual Stream Biomarkers Grid */}
-                  <div className="grid grid-cols-2 gap-2 mt-3 text-xs font-mono-chart">
+                  <div className="grid grid-cols-2 gap-2.5 mt-3 text-xs font-mono-chart">
                     {/* Blood Stream Readings */}
-                    <div className="bg-[#FAF6EE] p-2 rounded border border-[#D1DCE5]">
-                      <span className="text-[10px] font-bold text-[#2B4570] block uppercase border-b border-[#D1DCE5] pb-0.5 mb-1 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#2B4570]" /> Blood Chemistry
+                    <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                      <span className="text-xs font-bold text-emerald-900 block uppercase border-b border-slate-200 pb-1 mb-1.5 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-600" /> Blood Stream
                       </span>
-                      <div className="space-y-0.5">
-                        <div className="flex justify-between">
-                          <span className="text-[#556987]">BP:</span>
-                          <strong className={isBpHigh ? 'ink-red' : 'ink-blue'}>
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-center">
+                          <span className="text-slate-500 text-[11px]">BP:</span>
+                          <strong className={isBpHigh ? 'text-red-700 font-bold' : 'text-emerald-800'}>
                             {systolic}/{diastolic}
                           </strong>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-[#556987]">F. Gluc:</span>
-                          <strong className={isGlucHigh ? 'ink-red' : 'ink-blue'}>
+                        <div className="flex justify-between items-center">
+                          <span className="text-slate-500 text-[11px]">F. Gluc:</span>
+                          <strong className={isGlucHigh ? 'text-red-700 font-bold' : 'text-emerald-800'}>
                             {glucose} mg/dL
                           </strong>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-[#556987]">HbA1c:</span>
-                          <strong className={patient.healthData.hba1c && patient.healthData.hba1c >= 6.5 ? 'ink-red' : 'ink-blue'}>
+                        <div className="flex justify-between items-center">
+                          <span className="text-slate-500 text-[11px]">HbA1c:</span>
+                          <strong className={patient.healthData.hba1c && patient.healthData.hba1c >= 6.5 ? 'text-red-700 font-bold' : 'text-emerald-800'}>
                             {patient.healthData.hba1c || 5.4}%
                           </strong>
                         </div>
@@ -296,26 +397,26 @@ export const WardBoardPage: React.FC<WardBoardPageProps> = ({ onNavigate }) => {
                     </div>
 
                     {/* Sweat Sensor Stream Readings */}
-                    <div className="bg-[#FAF8F2] p-2 rounded border border-[#E8DFC9]">
-                      <span className="text-[10px] font-bold text-[#876527] block uppercase border-b border-[#E8DFC9] pb-0.5 mb-1 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#C98A2B]" /> Sweat Telemetry
+                    <div className="bg-teal-50/50 p-2.5 rounded-lg border border-teal-200">
+                      <span className="text-xs font-bold text-teal-900 block uppercase border-b border-teal-200 pb-1 mb-1.5 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-teal-600" /> Sweat Telemetry
                       </span>
-                      <div className="space-y-0.5">
-                        <div className="flex justify-between">
-                          <span className="text-[#556987]">Lactate:</span>
-                          <strong className={isLactateElevated ? 'ink-red' : 'text-[#2B4570]'}>
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-center">
+                          <span className="text-slate-500 text-[11px]">Lactate:</span>
+                          <strong className={isLactateElevated ? 'text-red-700 font-bold' : 'text-teal-900'}>
                             {sweatLactate} mmol/L
                           </strong>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-[#556987]">Cortisol:</span>
-                          <strong className="text-[#2B4570]">
+                        <div className="flex justify-between items-center">
+                          <span className="text-slate-500 text-[11px]">Cortisol:</span>
+                          <strong className="text-teal-900">
                             {sweatCortisol} ug/dL
                           </strong>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-[#556987]">Sodium:</span>
-                          <strong className="text-[#2B4570]">
+                        <div className="flex justify-between items-center">
+                          <span className="text-slate-500 text-[11px]">Sodium:</span>
+                          <strong className="text-teal-900">
                             {patient.healthData.sweat_sodium || 42} mM
                           </strong>
                         </div>
@@ -324,27 +425,30 @@ export const WardBoardPage: React.FC<WardBoardPageProps> = ({ onNavigate }) => {
                   </div>
                 </div>
 
-                {/* Doctor Orders Status Snippet */}
-                <div className="pt-2 border-t border-[#E2EAF0] text-[11px] font-mono-chart">
-                  <div className="text-[#556987] flex items-center justify-between">
-                    <span>Doctor Note:</span>
-                    <span className="text-[#2B4570] font-bold">
-                      {patient.doctorNotes.physicianSigned ? 'Signed & Active' : 'Pending Review'}
+                {/* Medication & Precautions Status Snippet */}
+                <div className="pt-2.5 border-t border-slate-200 text-xs font-mono-chart space-y-1">
+                  <div className="flex items-center justify-between text-slate-600">
+                    <span className="flex items-center gap-1">
+                      <Pill className="w-3.5 h-3.5 text-teal-700" />
+                      <strong>{activeTabletsCount} Active Tablets</strong>
+                    </span>
+                    <span className="text-emerald-800 font-bold">
+                      {isRecovered ? 'Treatment Completed' : 'Active Care Plan'}
                     </span>
                   </div>
-                  <p className="text-[#1E293B] truncate italic mt-0.5 font-sans text-xs">
-                    &ldquo;{patient.doctorNotes.clinicalPrecautions.slice(0, 60)}...&rdquo;
+                  <p className="text-slate-700 truncate italic font-sans text-xs">
+                    &ldquo;{patient.doctorNotes.clinicalPrecautions.slice(0, 65)}...&rdquo;
                   </p>
                 </div>
               </div>
 
               {/* Card Footer (Action Trigger) */}
-              <div className="p-3 bg-[#FAF6EE] border-t border-[#D1DCE5] rounded-b flex items-center justify-between text-xs font-mono-chart">
-                <span className="text-[#556987] text-[10px]">
+              <div className="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs font-mono-chart">
+                <span className="text-slate-500">
                   Admitted: {patient.admissionDate}
                 </span>
-                <span className="font-bold text-[#2B4570] flex items-center gap-1 group-hover:underline">
-                  Open Full Chart <ArrowRight className="w-3.5 h-3.5" />
+                <span className="font-bold text-emerald-800 flex items-center gap-1 group-hover:underline">
+                  Open Patient Chart &amp; Adjust Care <ArrowRight className="w-3.5 h-3.5" />
                 </span>
               </div>
             </div>
@@ -354,20 +458,20 @@ export const WardBoardPage: React.FC<WardBoardPageProps> = ({ onNavigate }) => {
 
       {/* 4. ADMIT NEW PATIENT MODAL */}
       {showAdmitModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1E293B]/70 backdrop-blur-xs">
-          <div className="bg-[#FFFFFF] border-2 border-[#2B4570] rounded-lg max-w-xl w-full p-6 shadow-2xl chart-paper relative max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-[#D1DCE5]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white border border-slate-200 rounded-xl max-w-xl w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div>
-                <h3 className="text-xl font-bold text-[#2B4570] font-heading">
+                <h3 className="text-xl font-bold text-emerald-950 font-heading">
                   Admit New Inpatient Bed
                 </h3>
-                <p className="text-xs font-mono-chart text-[#556987]">
-                  Internal Medicine &amp; Metabolic Observation Unit
+                <p className="text-xs font-mono-chart text-slate-500">
+                  Ward 4B &bull; Internal Medicine &amp; Metabolic Observation
                 </p>
               </div>
               <button
                 onClick={() => setShowAdmitModal(false)}
-                className="p-1.5 rounded text-[#556987] hover:bg-[#E2EAF0] cursor-pointer"
+                className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -376,45 +480,45 @@ export const WardBoardPage: React.FC<WardBoardPageProps> = ({ onNavigate }) => {
             <form onSubmit={handleCreatePatient} className="space-y-4 pt-4 text-xs font-mono-chart">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-[#1E293B] block mb-1">Patient Full Name:</label>
+                  <label className="font-bold text-slate-900 block mb-1">Patient Full Name:</label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. Samuel Jenkins"
                     value={newPatientName}
                     onChange={(e) => setNewPatientName(e.target.value)}
-                    className="w-full p-2 bg-[#FAF6EE] border border-[#C9D6DE] rounded text-[#1E293B] focus:border-[#2B4570]"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-[#1E293B] block mb-1">Primary Diagnosis:</label>
+                  <label className="font-bold text-slate-900 block mb-1">Primary Diagnosis:</label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. Acute Metabolic Derangement"
                     value={newPatientDiagnosis}
                     onChange={(e) => setNewPatientDiagnosis(e.target.value)}
-                    className="w-full p-2 bg-[#FAF6EE] border border-[#C9D6DE] rounded text-[#1E293B] focus:border-[#2B4570]"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="font-bold text-[#1E293B] block mb-1">Age:</label>
+                  <label className="font-bold text-slate-900 block mb-1">Age:</label>
                   <input
                     type="number"
                     value={newPatientAge}
                     onChange={(e) => setNewPatientAge(Number(e.target.value))}
-                    className="w-full p-2 bg-[#FAF6EE] border border-[#C9D6DE] rounded text-[#1E293B]"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900"
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-[#1E293B] block mb-1">Biological Sex:</label>
+                  <label className="font-bold text-slate-900 block mb-1">Biological Sex:</label>
                   <select
                     value={newPatientSex}
                     onChange={(e) => setNewPatientSex(e.target.value as any)}
-                    className="w-full p-2 bg-[#FAF6EE] border border-[#C9D6DE] rounded text-[#1E293B]"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900"
                   >
                     <option value="male">Male</option>
                     <option value="female">Female</option>
@@ -422,58 +526,58 @@ export const WardBoardPage: React.FC<WardBoardPageProps> = ({ onNavigate }) => {
                   </select>
                 </div>
                 <div>
-                  <label className="font-bold text-[#1E293B] block mb-1">Systolic BP (mmHg):</label>
+                  <label className="font-bold text-slate-900 block mb-1">Systolic BP (mmHg):</label>
                   <input
                     type="number"
                     value={newPatientSystolic}
                     onChange={(e) => setNewPatientSystolic(Number(e.target.value))}
-                    className="w-full p-2 bg-[#FAF6EE] border border-[#C9D6DE] rounded text-[#1E293B]"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="font-bold text-[#1E293B] block mb-1">Diastolic BP (mmHg):</label>
+                  <label className="font-bold text-slate-900 block mb-1">Diastolic BP (mmHg):</label>
                   <input
                     type="number"
                     value={newPatientDiastolic}
                     onChange={(e) => setNewPatientDiastolic(Number(e.target.value))}
-                    className="w-full p-2 bg-[#FAF6EE] border border-[#C9D6DE] rounded text-[#1E293B]"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900"
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-[#1E293B] block mb-1">Fasting Glucose (mg/dL):</label>
+                  <label className="font-bold text-slate-900 block mb-1">Fasting Glucose (mg/dL):</label>
                   <input
                     type="number"
                     value={newPatientGlucose}
                     onChange={(e) => setNewPatientGlucose(Number(e.target.value))}
-                    className="w-full p-2 bg-[#FAF6EE] border border-[#C9D6DE] rounded text-[#1E293B]"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900"
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-[#1E293B] block mb-1">Sweat Lactate (mmol/L):</label>
+                  <label className="font-bold text-slate-900 block mb-1">Sweat Lactate (mmol/L):</label>
                   <input
                     type="number"
                     step="0.1"
                     value={newPatientSweatLactate}
                     onChange={(e) => setNewPatientSweatLactate(Number(e.target.value))}
-                    className="w-full p-2 bg-[#FAF6EE] border border-[#C9D6DE] rounded text-[#1E293B]"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900"
                   />
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-[#D1DCE5] flex items-center justify-end gap-3">
+              <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setShowAdmitModal(false)}
-                  className="px-4 py-2 rounded border border-[#C9D6DE] text-[#556987] hover:bg-[#E2EAF0] cursor-pointer font-bold"
+                  className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100 cursor-pointer font-bold font-sans"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded bg-[#2B4570] hover:bg-[#1D3254] text-[#FAF6EE] cursor-pointer font-bold shadow-xs"
+                  className="px-5 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white cursor-pointer font-bold shadow-xs font-sans"
                 >
                   Admit &amp; Open Bedside Chart
                 </button>

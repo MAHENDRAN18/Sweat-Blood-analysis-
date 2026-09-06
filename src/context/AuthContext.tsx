@@ -29,10 +29,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         // Auto-initialize demo guest session
         const demoUser: User = {
-          id: 'user_clinician_demo',
-          name: 'Dr. Evelyn Reed (Research Fellow)',
-          email: 'evelyn.reed@ai-health.edu',
-          role: 'clinician',
+          id: 'user_doctor_demo',
+          username: 'doctor',
+          name: 'Dr. Senthil Kumar, MD',
+          email: 'senthil.kumar@cityhospital.in',
+          role: 'doctor',
           createdAt: new Date().toISOString()
         };
         const demoToken = 'mock_jwt_token_' + Date.now();
@@ -68,9 +69,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Fallback for standalone demo mode
         const fallbackUser: User = {
           id: 'user_' + Math.random().toString(36).substring(7),
-          name: email.split('@')[0] || 'Clinician User',
+          username: email.split('@')[0] || 'doctor_user',
+          name: email.split('@')[0] || 'Doctor User',
           email,
-          role: 'clinician',
+          role: 'doctor',
           createdAt: new Date().toISOString()
         };
         const fallbackToken = 'jwt_' + Date.now();
@@ -84,9 +86,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Fallback for seamless offline experience
       const fallbackUser: User = {
         id: 'user_' + Math.random().toString(36).substring(7),
-        name: email.split('@')[0] || 'Clinician User',
+        username: email.split('@')[0] || 'doctor_user',
+        name: email.split('@')[0] || 'Doctor User',
         email,
-        role: 'clinician',
+        role: 'doctor',
         createdAt: new Date().toISOString()
       };
       const fallbackToken = 'jwt_' + Date.now();
@@ -120,6 +123,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const newUser: User = {
       id: 'user_' + Math.random().toString(36).substring(7),
+      username: email.split('@')[0] || 'patient_user',
       name,
       email,
       role,
@@ -136,9 +140,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loginAsGuest = () => {
     const guestUser: User = {
       id: 'guest_' + Math.random().toString(36).substring(7),
-      name: 'Guest Clinician',
-      email: 'guest.researcher@multimodal-ai.org',
-      role: 'clinician',
+      username: 'guest_doctor',
+      name: 'Guest Doctor',
+      email: 'guest.doctor@multimodal-ai.org',
+      role: 'doctor',
       createdAt: new Date().toISOString()
     };
     const guestToken = 'jwt_guest_' + Date.now();

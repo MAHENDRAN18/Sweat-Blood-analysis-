@@ -2,31 +2,58 @@
 
 @layer base {
   :root {
-    --font-heading: 'Space Grotesk', system-ui, -apple-system, sans-serif;
-    --font-sans: 'Space Grotesk', system-ui, -apple-system, sans-serif;
-    --font-mono: 'Space Mono', 'IBM Plex Mono', monospace;
+    --font-heading: 'Inter', 'Roboto', 'Open Sans', 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    --font-sans: 'Inter', 'Roboto', 'Open Sans', 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    --font-serif: 'Inter', 'Roboto', 'Open Sans', Georgia, serif;
+    --font-mono: 'Source Code Pro', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
 
-    --color-paper: #FAF6EE;
-    --color-grid: #C9D6DE;
-    --color-ink-blue: #2B4570;
-    --color-ink-red: #B33A3A;
-    --color-ink-sage: #6B8F71;
-    --color-ink-amber: #C98A2B;
-    --color-ink-dark: #1E293B;
+    /* Base Font Size Scaled for Hospital Readability */
+    font-size: 16px;
+
+    /* Clinical Medical Green */
+    --color-med-green: #059669;
+    --color-med-green-dark: #064E3B;
+    --color-med-green-light: #ECFDF5;
+    --color-med-green-border: #A7F3D0;
+
+    /* Clinical Medical Red */
+    --color-med-red: #DC2626;
+    --color-med-red-dark: #991B1B;
+    --color-med-red-light: #FEF2F2;
+    --color-med-red-border: #FECACA;
+
+    /* Clinical Amber / Caution */
+    --color-med-amber: #D97706;
+    --color-med-amber-light: #FFFBEB;
+    --color-med-amber-border: #FDE68A;
+
+    /* Clinical Slate & Canvas */
+    --color-med-bg: #F8FAFC;
+    --color-med-card: #FFFFFF;
+    --color-med-border: #E2E8F0;
+    --color-med-text: #0F172A;
+    --color-med-muted: #475569;
+  }
+
+  html {
+    font-size: 16px;
   }
 
   body {
     font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.6;
     color-scheme: light;
-    background-color: #FAF6EE;
-    color: #1E293B;
-    letter-spacing: -0.01em;
+    background-color: #F8FAFC;
+    color: #0F172A;
+    letter-spacing: -0.006em;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     background-image: 
-      linear-gradient(to right, rgba(201, 214, 222, 0.45) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(201, 214, 222, 0.45) 1px, transparent 1px);
-    background-size: 20px 20px;
+      radial-gradient(#CBD5E1 0.75px, transparent 0.75px),
+      radial-gradient(#E2E8F0 0.75px, #F8FAFC 0.75px);
+    background-size: 24px 24px;
+    background-position: 0 0, 12px 12px;
     background-attachment: fixed;
   }
 
@@ -36,102 +63,114 @@
     font-weight: 700;
   }
 
+  .font-serif-hospital {
+    font-family: var(--font-serif);
+  }
+
   .font-mono-chart {
     font-family: var(--font-mono);
     font-feature-settings: "tnum" 1, "zero" 1;
   }
 }
 
-/* Authentic Hospital Bedside Chart Components */
+/* Modern Clinical Card Surfaces */
 .chart-paper {
-  background-color: #FFFCF7;
-  border: 1px solid #D1DCE5;
-  box-shadow: 0 2px 4px 0 rgba(43, 69, 112, 0.04), 0 1px 2px 0 rgba(43, 69, 112, 0.02);
+  background-color: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.05), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
 }
 
 .chart-grid-overlay {
   background-image: 
-    linear-gradient(to right, rgba(201, 214, 222, 0.5) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(201, 214, 222, 0.5) 1px, transparent 1px);
+    linear-gradient(to right, rgba(226, 232, 240, 0.6) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(226, 232, 240, 0.6) 1px, transparent 1px);
   background-size: 16px 16px;
 }
 
-.chart-clipboard-clip {
-  position: relative;
-}
-.chart-clipboard-clip::before {
-  content: '';
-  position: absolute;
-  top: -12px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 110px;
-  height: 18px;
-  background: #3A4D6B;
-  border-radius: 4px 4px 0 0;
-  box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.25), 0 2px 4px rgba(0, 0, 0, 0.15);
-  z-index: 10;
-}
+/* Clinical Status Badges & Inks (Green & Red primary) */
+.ink-green { color: #059669; }
+.ink-red { color: #DC2626; }
+.ink-amber { color: #D97706; }
+.ink-dark { color: #0F172A; }
+.ink-muted { color: #64748B; }
 
-/* Ink color text and border helpers */
-.ink-blue { color: #2B4570; }
-.ink-red { color: #B33A3A; }
-.ink-sage { color: #6B8F71; }
-.ink-amber { color: #C98A2B; }
+/* Legacy aliases mapped to pristine medical green & red palette */
+.ink-blue { color: #064E3B; }
+.ink-sage { color: #059669; }
 
-.bg-ink-blue { background-color: #2B4570; }
-.bg-ink-red { background-color: #B33A3A; }
-.bg-ink-sage { background-color: #6B8F71; }
-.bg-ink-amber { background-color: #C98A2B; }
+.bg-ink-green { background-color: #059669; }
+.bg-ink-red { background-color: #DC2626; }
+.bg-ink-amber { background-color: #D97706; }
+.bg-ink-blue { background-color: #064E3B; }
+.bg-ink-sage { background-color: #059669; }
 
-.border-ink-blue { border-color: #2B4570; }
-.border-ink-red { border-color: #B33A3A; }
-.border-ink-sage { border-color: #6B8F71; }
-.border-ink-amber { border-color: #C98A2B; }
+.border-ink-green { border-color: #059669; }
+.border-ink-red { border-color: #DC2626; }
+.border-ink-amber { border-color: #D97706; }
+.border-ink-blue { border-color: #064E3B; }
+.border-ink-sage { border-color: #059669; }
 
-/* Ruled table lines */
+/* Clinical Table Styles */
 .chart-table {
   border-collapse: collapse;
   width: 100%;
 }
 .chart-table th, .chart-table td {
-  border: 1px solid #D8E2E8;
-  padding: 6px 10px;
+  border: 1px solid #E2E8F0;
+  padding: 8px 12px;
 }
 .chart-table th {
-  background-color: #F0F5F8;
-  color: #2B4570;
+  background-color: #F8FAFC;
+  color: #0F172A;
   font-family: var(--font-heading);
   font-size: 0.75rem;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
 }
 
-/* Pen Plotted Trend Line Glow */
-.pen-plotted-blue {
-  stroke: #2B4570;
+/* Plotted Trend Lines (Medical Green vs Medical Red Alerts) */
+.pen-plotted-green {
+  stroke: #059669;
   stroke-width: 2.2;
-  filter: drop-shadow(0 1px 1px rgba(43, 69, 112, 0.2));
+  filter: drop-shadow(0 1px 2px rgba(5, 150, 105, 0.25));
 }
 
 .pen-plotted-red {
-  stroke: #B33A3A;
+  stroke: #DC2626;
   stroke-width: 2.2;
-  filter: drop-shadow(0 1px 1px rgba(179, 58, 58, 0.2));
+  filter: drop-shadow(0 1px 2px rgba(220, 38, 38, 0.25));
 }
 
-/* Custom Scrollbar for chart tables */
+.pen-plotted-blue {
+  stroke: #065F46;
+  stroke-width: 2.2;
+  filter: drop-shadow(0 1px 2px rgba(6, 95, 70, 0.2));
+}
+
+/* Medical Pulse Animation */
+@keyframes cardiacPulse {
+  0% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.9; }
+}
+
+.animate-cardiac {
+  animation: cardiacPulse 1.8s ease-in-out infinite;
+}
+
+/* Clinical Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #E8EFF4;
+  background: #F1F5F9;
 }
 ::-webkit-scrollbar-thumb {
-  background: #B6C8D5;
+  background: #CBD5E1;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #8FAABA;
+  background: #94A3B8;
 }

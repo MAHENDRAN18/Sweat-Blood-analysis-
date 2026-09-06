@@ -1,11 +1,7 @@
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 async function startServer() {
   const app = express();
@@ -50,7 +46,7 @@ async function startServer() {
 
   // API Route: Download Google Colab Notebook
   app.get('/api/models/download-colab', (req, res) => {
-    const notebookPath = path.join(__dirname, 'model_training', 'colab_training_pipeline.ipynb');
+    const notebookPath = path.join(process.cwd(), 'model_training', 'colab_training_pipeline.ipynb');
     if (fs.existsSync(notebookPath)) {
       res.download(notebookPath, 'colab_multimodal_training_pipeline.ipynb');
     } else {
@@ -60,7 +56,7 @@ async function startServer() {
 
   // API Route: Download Python Training Script
   app.get('/api/models/download-script', (req, res) => {
-    const scriptPath = path.join(__dirname, 'model_training', 'train_models.py');
+    const scriptPath = path.join(process.cwd(), 'model_training', 'train_models.py');
     if (fs.existsSync(scriptPath)) {
       res.download(scriptPath, 'train_models.py');
     } else {
